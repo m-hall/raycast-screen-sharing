@@ -79,11 +79,21 @@ function useSearch() {
   };
 }
 
-async function performSearch(searchText: string): Promise<SearchResult[]> {
-  const files = await fs.promises.readdir(RECENTS_LIST_PATH);
+let filesCache: string[];
 
-  return files.filter(
-    file => file.endsWith('.vncloc') && file.includes(searchText)
+async function performSearch(searchText: string): Promise<SearchResult[]> {
+  if (!filesCache) {
+    const files = await fs.promises.readdir(RECENTS_LIST_PATH);
+
+    filesCache = files.filter(
+      file => file.endsWith('.vncloc')
+    );
+  }
+
+  const searchLower = searchText.toLocaleLowerCase();
+
+  return filesCache.filter(
+    file => file.toLocaleLowerCase().includes(searchLower)
   ).map((file) => {
     return {
       name: file.slice(0, file.lastIndexOf('.')),
