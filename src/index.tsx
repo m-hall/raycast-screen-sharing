@@ -1,6 +1,10 @@
 import { ActionPanel, Action, List, showToast, Toast } from "@raycast/api";
-import { useState, useEffect, useRef, useCallback } from "react";
-import fetch, { AbortError } from "node-fetch";
+import { useState, useEffect, useCallback } from "react";
+import os from 'os';
+import fs from 'fs';
+import path from 'path';
+
+const RECENTS_LIST_PATH = path.join(os.homedir(), '/Library/Containers/com.apple.ScreenSharing/Data/Library/Application Support/Screen Sharing');
 
 export default function Command() {
   const { state, search } = useSearch();
@@ -25,19 +29,10 @@ function SearchListItem({ searchResult }: { searchResult: SearchResult }) {
   return (
     <List.Item
       title={searchResult.name}
-      subtitle={searchResult.description}
-      accessoryTitle={searchResult.username}
       actions={
         <ActionPanel>
           <ActionPanel.Section>
-            <Action.OpenInBrowser title="Open in Browser" url={searchResult.url} />
-          </ActionPanel.Section>
-          <ActionPanel.Section>
-            <Action.CopyToClipboard
-              title="Copy Install Command"
-              content={`npm install ${searchResult.name}`}
-              shortcut={{ modifiers: ["cmd"], key: "." }}
-            />
+            <Action.Open title="Open Screen Sharing" target={searchResult.path} application="com.apple.ScreenSharing" />
           </ActionPanel.Section>
         </ActionPanel>
       }
@@ -47,18 +42,15 @@ function SearchListItem({ searchResult }: { searchResult: SearchResult }) {
 
 function useSearch() {
   const [state, setState] = useState<SearchState>({ results: [], isLoading: true });
-  const cancelRef = useRef<AbortController | null>(null);
 
   const search = useCallback(
     async function search(searchText: string) {
-      cancelRef.current?.abort();
-      cancelRef.current = new AbortController();
       setState((oldState) => ({
         ...oldState,
         isLoading: true,
       }));
       try {
-        const results = await performSearch(searchText, cancelRef.current.signal);
+        const results = await performSearch(searchText);
         setState((oldState) => ({
           ...oldState,
           results: results,
@@ -70,22 +62,15 @@ function useSearch() {
           isLoading: false,
         }));
 
-        if (error instanceof AbortError) {
-          return;
-        }
-
         console.error("search error", error);
         showToast({ style: Toast.Style.Failure, title: "Could not perform search", message: String(error) });
       }
     },
-    [cancelRef, setState]
+    [setState]
   );
 
   useEffect(() => {
     search("");
-    return () => {
-      cancelRef.current?.abort();
-    };
   }, []);
 
   return {
@@ -94,33 +79,15 @@ function useSearch() {
   };
 }
 
-async function performSearch(searchText: string, signal: AbortSignal): Promise<SearchResult[]> {
-  const params = new URLSearchParams();
-  params.append("q", searchText.length === 0 ? "@raycast/api" : searchText);
+async function performSearch(searchText: string): Promise<SearchResult[]> {
+  const files = await fs.promises.readdir(RECENTS_LIST_PATH);
 
-  const response = await fetch("https://api.npms.io/v2/search" + "?" + params.toString(), {
-    method: "get",
-    signal: signal,
-  });
-
-  const json = (await response.json()) as
-    | {
-        results: {
-          package: { name: string; description?: string; publisher?: { username: string }; links: { npm: string } };
-        }[];
-      }
-    | { code: string; message: string };
-
-  if (!response.ok || "message" in json) {
-    throw new Error("message" in json ? json.message : response.statusText);
-  }
-
-  return json.results.map((result) => {
+  return files.filter(
+    file => file.endsWith('.vncloc') && file.includes(searchText)
+  ).map((file) => {
     return {
-      name: result.package.name,
-      description: result.package.description,
-      username: result.package.publisher?.username,
-      url: result.package.links.npm,
+      name: file.slice(0, file.lastIndexOf('.')),
+      path: path.join(RECENTS_LIST_PATH, file),
     };
   });
 }
@@ -132,7 +99,5 @@ interface SearchState {
 
 interface SearchResult {
   name: string;
-  description?: string;
-  username?: string;
-  url: string;
+  path: string;
 }
