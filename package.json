@@ -13,7 +13,8 @@
   "commands": [
     {
       "name": "index",
-      "title": "Search Screen Sharing Locations",
+      "title": "Search Recent Sessions",
+      "subtitle": "Screen Sharing",
       "description": "Gets a searchable list of Screen Sharing recent locations.",
       "mode": "view"
     }
