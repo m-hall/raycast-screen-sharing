@@ -1,10 +1,13 @@
 import { ActionPanel, Action, List, showToast, Toast } from "@raycast/api";
 import { useState, useEffect, useCallback } from "react";
-import os from 'os';
-import fs from 'fs';
-import path from 'path';
+import os from "os";
+import fs from "fs";
+import path from "path";
 
-const RECENTS_LIST_PATH = path.join(os.homedir(), '/Library/Containers/com.apple.ScreenSharing/Data/Library/Application Support/Screen Sharing');
+const RECENTS_LIST_PATH = path.join(
+  os.homedir(),
+  "/Library/Containers/com.apple.ScreenSharing/Data/Library/Application Support/Screen Sharing"
+);
 
 export default function Command() {
   const { state, search } = useSearch();
@@ -85,21 +88,19 @@ async function performSearch(searchText: string): Promise<SearchResult[]> {
   if (!filesCache) {
     const files = await fs.promises.readdir(RECENTS_LIST_PATH);
 
-    filesCache = files.filter(
-      file => file.endsWith('.vncloc')
-    );
+    filesCache = files.filter((file) => file.endsWith(".vncloc"));
   }
 
   const searchLower = searchText.toLocaleLowerCase();
 
-  return filesCache.filter(
-    file => file.toLocaleLowerCase().includes(searchLower)
-  ).map((file) => {
-    return {
-      name: file.slice(0, file.lastIndexOf('.')),
-      path: path.join(RECENTS_LIST_PATH, file),
-    };
-  });
+  return filesCache
+    .filter((file) => file.toLocaleLowerCase().includes(searchLower))
+    .map((file) => {
+      return {
+        name: file.slice(0, file.lastIndexOf(".")),
+        path: path.join(RECENTS_LIST_PATH, file),
+      };
+    });
 }
 
 interface SearchState {
