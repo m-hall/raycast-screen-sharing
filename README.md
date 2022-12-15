@@ -1,3 +1,3 @@
 # Screen Sharing Recents
 
-Adds shortcuts to recent screen sharing locations
+Adds a command to search through recent screen sharing locations.

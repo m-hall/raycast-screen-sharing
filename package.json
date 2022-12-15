@@ -4,10 +4,11 @@
   "title": "Screen Sharing Recents",
   "description": "Adds shortcuts to recent screen sharing locations",
   "icon": "command-icon.png",
-  "author": "bix",
+  "author": "m-hall",
   "categories": [
     "Productivity"
   ],
+  "keywords": ["vlc", "screen-sharing"],
   "license": "MIT",
   "commands": [
     {
